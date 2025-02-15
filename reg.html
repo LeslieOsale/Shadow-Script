@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Shadow Scribes</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tangerine:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+
+        // ✅ Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsIA1ggkXGuVuujWO05M7pa22olvmS_rQ",
+            authDomain: "shadow-scribe.firebaseapp.com",
+            projectId: "shadow-scribe",
+            storageBucket: "shadow-scribe.firebasestorage.app",
+            messagingSenderId: "77740236217",
+            appId: "1:77740236217:web:e22180d138b6e050996a68"
+        };
+
+        // ✅ Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // ✅ Handle New User Registration
+        window.registerUser = function () {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+
+            // ✅ Check if passwords match
+            if (password !== confirmPassword) {
+                alert("Passwords do not match!");
+                return;
+            }
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+
+                    // ✅ Send Email Verification
+                    sendEmailVerification(user).then(() => {
+                        alert("Registration Successful! Please check your email to verify your account.");
+                        window.location.href = "login.html"; // Redirect to login
+                    });
+                })
+                .catch((error) => {
+                    alert("Registration Failed: " + error.message);
+                });
+        };
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('https://res.cloudinary.com/dwpr0xrjq/image/upload/v1739578824/pink-flower-field-mountain-landscape-apple-macbook-pro-macbookpro-wallpapers-hd-4k-29-10-2024-1730269549-hd-wallpaper_qk5tyn.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .register-container {
+            width: 400px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Tangerine', cursive;
+            font-size: 35px;
+        }
+
+        input, button {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input {
+            background: white;
+            color: black;
+        }
+
+        button {
+            background: rgb(42, 165, 48);
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .links {
+            margin-top: 10px;
+        }
+
+        .links a {
+            color: lightblue;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-container">
+        <img src="https://res.cloudinary.com/dwpr0xrjq/image/upload/v1739542325/DALL_E_2025-02-14_17.10.45_-_A_stylish_logo_for_ShadowScript_a_poetry_and_article_writing_website._The_design_features_an_elegant_feather_quill_casting_a_shadow_symbolizing_de_eligy6.webp" 
+             alt="Shadow Scribes Logo" class="logo">
+        
+        <h1>Register</h1>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+        <button onclick="registerUser()">Register</button>
+
+        <div class="links">
+            <a href="login.html">Already have an account? Login</a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShadowScript - New Article</title>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="header.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tangerine:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsIA1ggkXGuVuujWO05M7pa22olvmS_rQ",
+            authDomain: "shadow-scribe.firebaseapp.com",
+            projectId: "shadow-scribe",
+            storageBucket: "shadow-scribe.firebasestorage.app",
+            messagingSenderId: "77740236217",
+            appId: "1:77740236217:web:e22180d138b6e050996a68",
+            measurementId: "G-SSF16MZMRZ"
+        };
+
+        // Initialize Firebase & Firestore
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make Firebase available globally
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+    </script>
+
+    <style>
+        /* Background Styling */
+        body {
+            font-family: 'Playfair Display', serif;
+            margin: 0;
+            background: url('https://res.cloudinary.com/dwpr0xrjq/image/upload/v1739538116/best-office-background-i8uigchn60xhfrza_s1zz51.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* Editor Container */
+        .editor-container {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+            margin-top: 80px;
+        }
+
+        /* Input Fields */
+        .input-field {
+            width: 98%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .toolbar button {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: none;
+            padding: 8px;
+            margin: 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Tangerine', cursive;
+            font-size: 18px;
+        }
+
+        .toolbar button:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Editor */
+        .editor {
+            width: 98%;
+            height: 300px;
+            padding: 10px;
+            background: white;
+            color: black;
+            font-family: 'Playfair Display', serif;
+            margin-top: 10px;
+            border-radius: 5px;
+            overflow-y: auto;
+        }
+
+        /* Timestamp */
+        #lastEdited {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: lightgray;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="site-header">
+        <button class="menu-btn" onclick="openSidebar()">☰</button>
+        <h1 class="site-title">ShadowScript</h1>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <a href="index.html">🏠 Home</a>
+        <a href="new-article.html">✍ New Article</a>
+        <a href="saved-articles.html">📂 Saved Articles</a>
+        <a href="#">⚙️ Settings</a>
+        <a href="#">🔒 Logout</a>
+        <div class="sidebar-footer">Designed by Leslie</div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Editor -->
+    <div class="editor-container">
+        <input type="text" id="title" class="input-field" placeholder="Enter Title">
+        <input type="text" id="author" class="input-field" placeholder="Enter Author">
+        
+        <div class="toolbar">
+            <button onclick="formatText('bold')"><b>B</b></button>
+            <button onclick="formatText('italic')"><i>I</i></button>
+            <button onclick="formatText('underline')"><u>U</u></button>
+            <button onclick="insertImage()">🖼 Image</button>
+            <button onclick="saveArticle()">💾 Save</button>
+        </div>
+        
+        <div id="editor" contenteditable="true" class="editor" placeholder="Start writing..."></div>
+        <div id="lastEdited"></div>
+    </div>
+
+    <script src="sidebar.js"></script>
+
+    <script>
+        async function saveArticle() {
+            const title = document.getElementById("title").value.trim();
+            const author = document.getElementById("author").value.trim();
+            const content = document.getElementById("editor").innerHTML;
+            const timestamp = new Date().toISOString();
+
+            if (!title || !author) {
+                alert("Title and Author are required.");
+                return;
+            }
+
+            try {
+                const db = window.db;
+                if (!db) throw new Error("Firestore is not initialized.");
+
+                const collectionRef = window.collection(db, "articles");
+                await window.addDoc(collectionRef, { title, author, content, timestamp });
+
+                alert("Article saved successfully!");
+                window.location.href = "saved-articles.html";
+            } catch (error) {
+                console.error("Error saving article:", error);
+                alert("Failed to save the article.");
+            }
+        }
+    </script>
+    <script type="module" src="authGuard.js"></script>
+    <script type="module" src="firebase.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Articles - ShadowScript</title>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="header.css">
+    <link rel="stylesheet" href="sidebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tangerine:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, getDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsIA1ggkXGuVuujWO05M7pa22olvmS_rQ",
+            authDomain: "shadow-scribe.firebaseapp.com",
+            projectId: "shadow-scribe",
+            storageBucket: "shadow-scribe.firebasestorage.app",
+            messagingSenderId: "77740236217",
+            appId: "1:77740236217:web:e22180d138b6e050996a68",
+            measurementId: "G-SSF16MZMRZ"
+        };
+
+        // Initialize Firebase & Firestore
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Expose Firestore functions globally
+        window.db = db;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.getDoc = getDoc;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+    </script>
+
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding-top: 80px;
+            background: url('https://res.cloudinary.com/dwpr0xrjq/image/upload/v1739538116/best-office-background-i8uigchn60xhfrza_s1zz51.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .article-card {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
+            text-align: left;
+            min-height: 180px;
+        }
+
+        button {
+            padding: 8px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: brown;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        /* View Article Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 75vh;
+        background: rgba(0, 0, 0, 0.9);
+        border-radius: 10px;
+        overflow: hidden;
+        color: white;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+    }
+
+    /* Darker Background Image */
+    .modal-body {
+        height: 90%;
+        overflow-y: auto;
+        padding: 20px;
+        text-align: left;
+        background: url('https://res.cloudinary.com/dwpr0xrjq/image/upload/v1736143864/beautiful-waterfall-flowers-water-nature-waterfall-hd-wallpaper-ai-generated-free-photo_hamthi.jpg') no-repeat center center;
+        background-size: cover;
+        position: relative;
+    }
+
+    /* Dark Overlay for Better Readability */
+    .modal-body::before {
+        content: "";
+        position: fixed; /* Lock overlay in place */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6); /* Dark overlay */
+    }
+
+    /* Ensure Text Stays Bright and Above Overlay */
+    .modal-body * {
+        position: relative;
+        color: white;
+    }
+
+    .close-modal, .download-pdf {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        background: red;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 5px;
+        z-index: 2000;
+    }
+
+    .download-pdf {
+        right: 100px;
+        background: green;
+    }
+
+    h1 { font-weight: bold;
+         font-family: 'Tangerine', cursive; 
+         font-size: 40px;}
+    h2 { font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="site-header">
+        <button class="menu-btn" onclick="openSidebar()">☰</button>
+        <h1 class="site-title">Shadow Script</h1>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <a href="index.html">🏠 Home</a>
+        <a href="new-article.html">✍ New Article</a>
+        <a href="saved-articles.html">📂 Saved Articles</a>
+        <a href="#">⚙️ Settings</a>
+        <a href="#" onclick="logoutUser()">🔒 Logout</a>
+        <div class="sidebar-footer">Designed by Leslie</div>
+    </div>
+    <!-- Overlay -->
+<div class="overlay" id="overlay"></div>
+
+    <!-- Search Bar -->
+    <div class="container">
+        <div id="articles-list" class="articles-grid"></div>
+    </div>
+
+    <!-- Modal -->
+    <div id="viewArticleModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">✖ Close</button>
+            <button class="download-pdf" onclick="downloadPDF()">📄 Download PDF</button>
+            <div id="article-view" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadArticles);
+
+        async function loadArticles() {
+            const db = window.db;
+            const querySnapshot = await window.getDocs(window.collection(db, "articles"));
+            const articlesContainer = document.getElementById("articles-list");
+            articlesContainer.innerHTML = "";
+        
+            querySnapshot.forEach((doc) => {
+                const article = doc.data();
+                
+                // ✅ Fix: Ensure timestamp is properly formatted
+                let timestamp = "No Date Available";
+                if (article.timestamp) {
+                    if (article.timestamp.toDate) {
+                        // ✅ If timestamp is a Firestore Timestamp object
+                        timestamp = new Date(article.timestamp.toDate()).toLocaleString();
+                    } else {
+                        // ✅ If timestamp is already a JavaScript Date
+                        timestamp = new Date(article.timestamp).toLocaleString();
+                    }
+                }
+        
+                const articleCard = document.createElement("div");
+                articleCard.classList.add("article-card");
+        
+                articleCard.innerHTML = `
+                    <h1>${article.title}</h1>
+                    <h2>(${article.author})</h2>
+                    <p>${article.content.substring(0, 100)}...</p>
+                    <small>${timestamp}</small>  <!-- ✅ Timestamp always loads correctly -->
+                    <br>
+                    <button onclick="editArticle('${doc.id}')">📝 Edit</button>
+                    <button onclick="viewArticle('${doc.id}')">👁 View</button>
+                    <button onclick="deleteArticle('${doc.id}')">❌ Delete</button>
+                `;
+        
+                articlesContainer.appendChild(articleCard);
+            });
+        }
+
+        async function viewArticle(articleId) {
+            const db = window.db;
+            const articleDoc = await window.getDoc(window.doc(db, "articles", articleId));
+
+            if (articleDoc.exists()) {
+                document.getElementById("article-view").innerHTML = `
+                    <h1>${articleDoc.data().title}</h1>
+                    <h2>(${articleDoc.data().author})</h2>
+                    <p>${articleDoc.data().content}</p>
+                `;
+                document.getElementById("viewArticleModal").style.display = "block";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("viewArticleModal").style.display = "none";
+        }
+        async function deleteArticle(articleId) {
+            if (!confirm("Are you sure you want to delete this article?")) return;
+        
+            try {
+                const db = window.db;
+                await window.deleteDoc(window.doc(db, "articles", articleId));
+        
+                // ✅ Refresh articles after deletion
+                alert("Article deleted successfully!");
+                loadArticles(); // Reload articles list
+            } catch (error) {
+                console.error("Error deleting article:", error);
+                alert("Failed to delete article. Please try again.");
+            }
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+        
+            // ✅ Set Custom Watermark Message (Change this as needed)
+            const watermarkText = "Created by Shadow Scribes";  // You can change this to any message
+        
+            // ✅ Get modal content correctly
+            const articleView = document.getElementById("article-view");
+        
+            if (!articleView) {
+                alert("Error: Article view not found!");
+                return;
+            }
+        
+            // ✅ Capture and clean article content (Remove emojis)
+            const removeEmojis = (text) => text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}]/gu, "");
+        
+            let articleTitle = removeEmojis(articleView.querySelector("h1")?.innerText.trim() || "Untitled");
+            let articleAuthor = removeEmojis(articleView.querySelector("h2")?.innerText.trim() || "(Unknown Author)");
+            let articleContent = "";
+        
+            articleView.querySelectorAll("p, div").forEach(element => {
+                articleContent += removeEmojis(element.innerText) + "\n\n";
+            });
+        
+            if (!articleContent.trim()) {
+                alert("No content to download. Make sure the article is loaded.");
+                return;
+            }
+        
+            // ✅ Load background image
+            const img = new Image();
+            img.src = "https://res.cloudinary.com/dwpr0xrjq/image/upload/v1736143864/beautiful-waterfall-flowers-water-nature-waterfall-hd-wallpaper-ai-generated-free-photo_hamthi.jpg";
+        
+            img.onload = function () {
+                let pageHeight = 297 - 40; // A4 height minus top & bottom margins
+                let yPosition = 60; // Start text position
+                let lineHeight = 10;
+        
+                // ✅ Split text into multiple pages
+                let textLines = doc.splitTextToSize(articleContent, 180);
+                
+                doc.addImage(img, "JPEG", 0, 0, 210, 297); // ✅ Full-page background (A4 size)
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+        
+                // ✅ First page: Add Title & Author
+                doc.setFont("helvetica", "bold");
+                doc.text(articleTitle, 105, 30, { align: "center" });
+                doc.setFont("helvetica", "italic");
+                doc.text(articleAuthor, 105, 40, { align: "center" });
+        
+                // ✅ Add Article Content (Tangerine Font)
+                doc.setFont("tangerine", "normal");
+                doc.setFontSize(18);
+        
+                textLines.forEach((line, i) => {
+                    if (yPosition + lineHeight > pageHeight) {
+                        doc.addPage();
+                        doc.addImage(img, "JPEG", 0, 0, 210, 297); // ✅ Background for new page
+                        yPosition = 20; // Reset Y position for new page
+                    }
+                    doc.text(line, 20, yPosition);
+                    yPosition += lineHeight;
+                });
+        
+                // ✅ Add Page Numbers & Custom Watermark on every page
+                let totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+        
+                    // ✅ Page Number
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.setTextColor(200, 200, 200); // Light gray text
+                    doc.text(`Page ${i} of ${totalPages}`, 105, 290, { align: "center" });
+        
+                    // ✅ Custom Watermark
+                    doc.setFontSize(14);
+                    doc.setTextColor(150, 150, 150);
+                    doc.text(watermarkText, 105, 280, { align: "center" });  // Change this text dynamically
+                }
+        
+                // ✅ Save PDF with article title
+                doc.save(`${articleTitle.replace(/\s+/g, "_")}.pdf`);
+            };
+        
+            img.onerror = function () {
+                alert("Failed to load background image!");
+            };
+        }
+        // ✅ Logout Function (Works for Sidebar Button)
+        window.logoutUser = function () {
+            signOut(auth)
+                .then(() => {
+                    alert("Logged out successfully!");
+                    window.location.href = "login.html"; // Redirect to Login
+                })
+                .catch((error) => {
+                    alert("Logout Failed: " + error.message);
+                });
+        };
+        
+        
+    </script>
+    <script src="sidebar.js"></script>
+    <script type="module" src="authGuard.js"></script>
+    <script type="module" src="firebase.js"></script>
+    
+
+</body>
+</html>

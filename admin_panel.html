@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Shadow Scribes</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tangerine:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+        // ✅ Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsIA1ggkXGuVuujWO05M7pa22olvmS_rQ",
+            authDomain: "shadow-scribe.firebaseapp.com",
+            projectId: "shadow-scribe",
+            storageBucket: "shadow-scribe.appspot.com",
+            messagingSenderId: "77740236217",
+            appId: "1:77740236217:web:e22180d138b6e050996a68"
+        };
+
+        // ✅ Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ✅ Secure Admin Panel with Password
+        let isAuthenticated = false;
+        function checkPassword() {
+            const enteredPassword = prompt("Enter Admin Password:");
+            if (enteredPassword === "Godfirst") {
+                isAuthenticated = true;
+                loadUsers(); // ✅ Load users only if authenticated
+            } else {
+                alert("Incorrect Password! Access Denied.");
+                window.location.href = "login.html"; // Redirect non-admins
+            }
+        }
+
+        // ✅ Load Users from Firestore
+        async function loadUsers() {
+            if (!isAuthenticated) return;
+
+            const usersList = document.getElementById("usersList");
+            usersList.innerHTML = "<p>Loading users...</p>";
+
+            const querySnapshot = await getDocs(collection(db, "users"));
+            usersList.innerHTML = ""; // Clear loading text
+
+            querySnapshot.forEach((doc) => {
+                const user = doc.data();
+                const userId = doc.id;
+                const isVerified = user.isVerified ? "✅ Approved" : "❌ Pending";
+
+                usersList.innerHTML += `
+                    <div class="user-card">
+                        <img src="${user.profilePic || 'https://res.cloudinary.com/dwpr0xrjq/image/upload/v1737479050/Bagoys-Citrus-Sunshine-250x300_joi5q9.jpg'}" alt="Profile" class="profile-pic">
+                        <p><strong>${user.name}</strong> (${user.email})</p>
+                        <p>Status: <span id="status-${userId}">${isVerified}</span></p>
+                        ${!user.isVerified ? `<button onclick="approveUser('${userId}')">Approve</button>` : ""}
+                        <button onclick="deleteUser('${userId}')">Delete</button>
+                    </div>
+                `;
+            });
+        }
+
+        // ✅ Approve User (Update Firestore)
+        async function approveUser(userId) {
+            await updateDoc(doc(db, "users", userId), { isVerified: true });
+            document.getElementById(`status-${userId}`).textContent = "✅ Approved";
+            alert("User Approved!");
+            loadUsers();
+        }
+
+        // ✅ Delete User (Remove from Firestore)
+        async function deleteUser(userId) {
+            if (confirm("Are you sure you want to delete this user?")) {
+                await deleteDoc(doc(db, "users", userId));
+                alert("User Deleted!");
+                loadUsers();
+            }
+        }
+
+        // ✅ Run Password Check on Page Load
+        window.onload = checkPassword;
+
+        // ✅ Make functions global for button clicks
+        window.approveUser = approveUser;
+        window.deleteUser = deleteUser;
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('https://res.cloudinary.com/dwpr0xrjq/image/upload/v1739578824/pink-flower-field-mountain-landscape-apple-macbook-pro-macbookpro-wallpapers-hd-4k-29-10-2024-1730269549-hd-wallpaper_qk5tyn.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        h1 {
+            font-family: 'Tangerine', cursive;
+            font-size: 40px;
+        }
+
+        .user-card {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            margin: 10px auto;
+            width: 80%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+        }
+
+        .profile-pic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        button {
+            background: rgb(42, 165, 48);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: rgb(30, 120, 35);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Panel - User Verification</h1>
+    <div id="usersList">
+        <p>Loading users...</p>
+    </div>
+
+</body>
+</html>

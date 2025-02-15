@@ -1,0 +1,87 @@
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    padding-top: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: 0.3s;
+    color: white;
+}
+
+/* Sidebar active state */
+.sidebar.active {
+    left: 0;
+}
+
+/* Sidebar Content (Pushes Footer Down) */
+.sidebar-content {
+    flex-grow: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Sidebar Buttons */
+.sidebar a {
+    color: white;
+    display: block;
+    text-align: center;
+    font-size: 18px;
+    padding: 12px;
+    margin: 10px auto;
+    width: 80%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Glowing Effect on Hover */
+.sidebar a:hover {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    width: 100%;
+    padding: 15px;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    position: relative;
+}
+
+/* Footer Border - 3/4 the Button Width */
+.sidebar-footer::before {
+    content: "";
+    display: block;
+    width: 60%;  /* 3/4 of 80% button width */
+    margin: 0 auto 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+/* RESPONSIVE SIDEBAR */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 220px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 100%;
+        left: -100%;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+}
