@@ -21,3 +21,5 @@ document.addEventListener('click', function(event) {
         closeSidebar();
     }
 });
+// ✅ Close sidebar when hamburger menu is clicked
+document.querySelector('.menu-btn').addEventListener('click', closeSidebar);
